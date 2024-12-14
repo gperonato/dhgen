@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with DHgeN. If not, see <http://www.gnu.org/licenses/>
 
-FROM python:3.8-slim
+FROM python:3.12-slim
 
 RUN apt-get update \
 && apt-get install -y --no-install-recommends git \
@@ -30,6 +30,8 @@ RUN git clone https://github.com/goderik01/PACE2018.git
 RUN cd PACE2018 && make
 RUN cp /PACE2018/bin/star_contractions_test /bin/star_contractions_test
 
-COPY . DHgeN
-WORKDIR /DHgeN
+COPY pyproject.toml DHgeN/pyproject.toml
+WORKDIR DHgeN
+RUN pip3 install --no-cache-dir .[test]
+COPY . .
 RUN pip3 install .[test]

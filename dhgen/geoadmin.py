@@ -120,7 +120,7 @@ def geoadmin_to_gdf(parameters: dict=PARAMETERS, delist=True, service = SERVICE)
             else:
                 return ""
             
-        hasList = (gdf.drop("geometry",axis=1).applymap(type) == list).any()
+        hasList = (gdf.drop("geometry",axis=1).map(type) == list).any()
         for col in hasList.loc[hasList].index:
             gdf[col] = gdf.apply(lambda x:",".join(delist(x[col])),axis=1)
             
