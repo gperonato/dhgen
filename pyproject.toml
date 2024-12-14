@@ -43,7 +43,7 @@ test = [
 # harcoded versions for testing/reproducibility
 "geopandas==1.0.1",
 "pandas==2.2.3",
-"networkx==3.2.1",
+"networkx==3.4.2",
 "requests==2.32.3",
 "pyogrio==0.10.0",
 "shapely==2.0.6",

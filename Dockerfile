@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with DHgeN. If not, see <http://www.gnu.org/licenses/>
 
-FROM python:3.9-slim
+FROM python:3.12-slim
 
 RUN apt-get update \
 && apt-get install -y --no-install-recommends git \
