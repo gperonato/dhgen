@@ -14,7 +14,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Set up environment variables
+      run: echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag dhgen:$(date +%s)
+      run: docker build . --file Dockerfile --tag dhgen:${{ env.IMAGE_TAG }}
     - name: Run the tests
-      run: docker run --rm -it dhgen:$(date +%s) python -m unittest tests/*.py
+      run: docker run --rm dhgen:${{ env.IMAGE_TAG }} python -m unittest discover -s tests
