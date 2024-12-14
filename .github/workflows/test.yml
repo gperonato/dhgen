@@ -1,0 +1,43 @@
+name: Test pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set_image_tag.outputs.image_tag }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up environment variables
+      id: set_image_tag
+      run: echo "::set-output name=image_tag::$(date +%s)"
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag dhgen:${{ steps.set_image_tag.outputs.image_tag }}
+    - name: Save Docker image as artifact
+      run: docker save dhgen:${{ steps.set_image_tag.outputs.image_tag }} -o dhgen.tar
+    - name: Upload Docker image artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: dhgen-image
+        path: dhgen.tar
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Download Docker image artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: dhgen-image
+    - name: Load Docker image
+      run: docker load -i dhgen.tar
+    - name: Run the tests
+      run: docker run --rm dhgen:${{ needs.build.outputs.image_tag }} python -m unittest discover -s tests
