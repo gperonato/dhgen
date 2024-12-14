@@ -39,7 +39,7 @@ import signal
 import time
 import subprocess
 import uuid
-import fiona
+import pyogrio
 import pickle
 
 logging.basicConfig(level=logging.INFO)
@@ -639,7 +639,7 @@ def import_geometry(api_parameters,gpkg_path=GEOADMIN_CACHE_FILE):
     """Load geodata from either file or API"""
     polygon = api_parameters_to_geometry(api_parameters)
     layer = api_parameters["layers"]
-    if os.path.exists(gpkg_path) and layer in fiona.listlayers(gpkg_path):
+    if os.path.exists(gpkg_path) and layer in pyogrio.list_layers(gpkg_path):
         geometry = gpd.read_file(gpkg_path, layer=layer)
         if polygon:
             geometry = geometry.loc[geometry.intersects(polygon),:]
