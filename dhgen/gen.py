@@ -42,6 +42,8 @@ import uuid
 import pyogrio
 import pickle
 
+pd.set_option('future.no_silent_downcasting', True)
+
 logging.basicConfig(level=logging.INFO)
 REPOSITORY_DIR = os.path.dirname(os.getcwd())
 
@@ -169,9 +171,9 @@ def add_power(regbl, t_ext=T_EXT, t_int=T_INT, to_round=True, limit=True):
                          } 
     regbl["gbaup"] = pd.to_numeric(regbl["gbaup"]).astype("Int64")
     regbl["gklas"] = pd.to_numeric(regbl["gklas"]).astype("Int64")
-    regbl["nfloors"] = pd.to_numeric(regbl["gastw"])
+    regbl["nfloors"] = pd.to_numeric(regbl["gastw"]).astype(float)
     regbl.loc[regbl["nfloors"].isnull() & ~regbl["egid"].isnull(),"nfloors"] = 1.999 # Default value
-    regbl["footprint_area"] = pd.to_numeric(regbl["garea"])
+    regbl["footprint_area"] = pd.to_numeric(regbl["garea"]).astype(float)
     regbl.loc[regbl["footprint_area"].isnull() & ~regbl["egid"].isnull(),"footprint_area"] = 49.999 # Default value
     regbl["floor_area"] = (regbl["footprint_area"] * regbl["nfloors"])
     
@@ -544,15 +546,8 @@ def intersect_graphs(n1, n2):
     n2_pts, n2_lines = nx_to_gdf(n2)
     all_pts = pd.concat([n1_pts,n2_pts])
     all_inter = []
-    logging.warning('Warnings in shapely intersection method are currently ignored...')
     for n2i, n2_seg in n2_lines.iterrows():
-        # Suppress warnings in Shapely for empty intersections until fixed
-        # "RuntimeWarning: invalid value encountered in intersection"
-        initial_settings = np.seterr()
-        np.seterr(invalid="ignore")
         inter = n1_lines.intersection(n2_seg.geometry)
-        # Reset initial error settings
-        np.seterr(**initial_settings)
         inter = inter[~inter.is_empty] 
         for n1i, inte in pd.DataFrame(inter).iterrows():
             inter_dict = {}
@@ -720,8 +715,8 @@ def delisting(orig_df):
             return [str(s) for s in mylist]
         else:
             return [str(mylist)]
-    hasList = (df.drop("geometry",axis=1).applymap(type) == list).any()
-    hasTuple = (df.drop("geometry",axis=1).applymap(type) == tuple).any()
+    hasList = (df.drop("geometry",axis=1).map(type) == list).any()
+    hasTuple = (df.drop("geometry",axis=1).map(type) == tuple).any()
     for col in hasList.loc[hasList].index:
         df[col] = df.apply(lambda x:",".join(delist(x[col])),axis=1)
     for col in hasTuple.loc[hasTuple].index:
@@ -977,7 +972,7 @@ def setup_graph(analysis_area=[],
         if geometry_file_path:
             parameters_footprints["layers"] = "footprints"
         footprints = import_geometry(parameters_footprints,gpkg_file_path)
-        inside = inside.difference(footprints.unary_union)
+        inside = inside.difference(footprints.union_all())
     
     if grid_type == "fishnet":
         graph = nx_grid(bounds,**grid_size)
@@ -1001,7 +996,7 @@ def setup_graph(analysis_area=[],
             buildings = stations
         graph = voronoi_nx(buildings,bounds)
         logging.info('Removing intersectinge edges')
-        graph = remove_intersecting_edges(graph,footprints.unary_union)
+        graph = remove_intersecting_edges(graph,footprints.union_all())
     else:
         raise AttributeError("Unknown grid_type {}".format(grid_type))
     
